@@ -53,6 +53,7 @@
 
   html, body {
     height: 100%;
+    height: 100dvh;
     font-family: var(--font-sans);
     background: var(--bg-base);
     color: var(--text-1);
@@ -63,6 +64,7 @@
   .app {
     display: flex;
     height: 100vh;
+    height: 100dvh;
     position: relative;
   }
 
@@ -567,6 +569,8 @@
     font-size: 14px;
     line-height: 1.7;
     position: relative;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .msg-row.ai .msg-bubble {
@@ -1177,7 +1181,18 @@
     border-radius: 4px;
     transition: opacity var(--transition);
   }
-  .history-item:hover .history-item-del { opacity: 1; }
+  .history-item-edit {
+    flex-shrink: 0;
+    opacity: 0;
+    font-size: 11px;
+    color: var(--text-3);
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: opacity var(--transition);
+  }
+  .history-item:hover .history-item-del,
+  .history-item:hover .history-item-edit { opacity: 1; }
+  .history-item-edit:hover { color: var(--accent); background: rgba(139,92,246,0.12); }
   .history-item-del:hover { color: var(--error); background: rgba(239,68,68,0.1); }
   .history-empty {
     padding: 24px 16px;
@@ -1238,7 +1253,7 @@
     border-radius: var(--radius-lg);
     width: 520px;
     max-width: calc(100vw - 32px);
-    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -1735,7 +1750,7 @@
     background: var(--bg-panel); border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     width: 480px; max-width: calc(100vw - 32px);
-    max-height: calc(100vh - 64px); overflow-y: auto;
+    max-height: calc(100dvh - 64px); overflow-y: auto;
     box-shadow: 0 24px 80px rgba(0,0,0,0.7), var(--shadow-glow);
     animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
     padding: 24px 26px;
@@ -1783,6 +1798,43 @@
     .topbar-actions .icon-btn:not(#mem-badge-topbar) { display: none; }
   }
 
+  .doc-list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+  .doc-list-name {
+    flex: 1;
+    color: var(--text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .doc-list-count {
+    font-size: 10.5px;
+    color: var(--text-3);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .doc-list-del {
+    flex-shrink: 0;
+    padding: 3px 6px;
+    border-radius: 5px;
+    color: var(--text-3);
+    cursor: pointer;
+    font-size: 11px;
+    border: none;
+    background: none;
+    transition: all var(--transition);
+  }
+  .doc-list-del:hover { color: var(--error); background: rgba(239,68,68,0.1); }
+
   /* ===== CREATE CHAR MODAL ===== */
   .create-char-modal-overlay {
     display: none; position: fixed; inset: 0;
@@ -1796,7 +1848,7 @@
     border: 1px solid rgba(236,72,153,0.2);
     border-radius: var(--radius-lg);
     width: 460px; max-width: calc(100vw - 32px);
-    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
     overflow-y: auto; display: flex; flex-direction: column;
     box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 40px rgba(236,72,153,0.1);
     animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
@@ -2107,6 +2159,16 @@
             Limpiar toda la memoria de Supabase
           </button>
         </div>
+        <!-- Fix 5: Lista de documentos individuales -->
+        <div class="modal-section">
+          <div class="modal-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Documentos en Memoria</span>
+            <button class="btn-sm btn-ghost" style="padding:3px 9px;font-size:11px;" onclick="loadDocumentsList()">↻ Actualizar</button>
+          </div>
+          <div id="docs-list-container" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-top:4px;">
+            <div style="font-size:12px;color:var(--text-3);text-align:center;padding:12px;">Haz clic en Actualizar para ver los documentos</div>
+          </div>
+        </div>
         <div class="modal-section">
           <div class="modal-section-title">Agregar Memoria</div>
           <textarea id="memory-input" class="memory-textarea"
@@ -2330,6 +2392,37 @@ function escapeHtml(str) {
   return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+function pinsStorageKey(chatId) {
+  return `shizuku_pins_${chatId}`;
+}
+
+function savePinsToLocal() {
+  if (!activeChatId) return;
+  const minimal = pinnedMessages.map(p => ({ id: p.id, role: p.role, text: p.text }));
+  localStorage.setItem(pinsStorageKey(activeChatId), JSON.stringify(minimal));
+}
+
+function loadPinsFromLocal(chatId) {
+  try {
+    return JSON.parse(localStorage.getItem(pinsStorageKey(chatId)) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function applyPinBadge(entry) {
+  if (!entry || !entry.el) return;
+  const content = entry.el.querySelector('.msg-content');
+  if (!content) return;
+  if (content.querySelector('.msg-pin-badge')) return;
+  const sender = content.querySelector('.msg-sender');
+  if (!sender) return;
+  const badge = document.createElement('div');
+  badge.className = 'msg-pin-badge';
+  badge.innerHTML = '📌 Marcado';
+  sender.insertAdjacentElement('afterend', badge);
+}
+
 // Mobile sidebar
 function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('mobile-overlay').classList.add('show'); }
 function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobile-overlay').classList.remove('show'); }
@@ -2395,6 +2488,7 @@ async function doLogout() {
   currentUser = null;
   chatHistory = [];
   activeChatId = null;
+  localStorage.removeItem('shizuku_active_chat');
   showAuthScreen();
 }
 
@@ -2406,19 +2500,24 @@ function hideAuthScreen() {
   document.getElementById('auth-screen').classList.add('hidden');
 }
 
-function onUserLoaded(user) {
+async function onUserLoaded(user) {
   currentUser = user;
   hideAuthScreen();
   const initials = (user.email || '?').charAt(0).toUpperCase();
   document.getElementById('user-avatar-initials').textContent = initials;
   document.getElementById('user-email-display').textContent   = user.email || '';
   loadSettings();
-  renderHistoryList();
   countDocuments();
 
-  // Restore saved mode + activeChar
+  // Renderizar historial primero para tener los items en el DOM
+  await renderHistoryList();
+
+  // Restaurar el último chat abierto (guardado en localStorage)
+  const savedChatId = localStorage.getItem('shizuku_active_chat');
   const savedMode   = localStorage.getItem('shizuku_mode') || 'general';
   const savedCharId = localStorage.getItem('shizuku_active_char');
+
+  // Aplicar modo guardado antes de cargar el chat
   if (savedMode === 'rp') {
     appMode = 'rp';
     document.getElementById('mode-btn-general').classList.remove('active');
@@ -2427,19 +2526,23 @@ function onUserLoaded(user) {
     document.getElementById('rp-bg').style.display = 'block';
     document.body.classList.add('rp-mode');
     document.getElementById('pins-btn').style.display = 'flex';
+  }
+
+  if (savedChatId) {
+    // loadChatById ya maneja la restauración de modo, personaje y mensajes
+    await loadChatById(savedChatId);
+  } else if (savedMode === 'rp') {
+    // No hay chat previo pero estaba en modo RP: restaurar personaje y mostrar welcome RP
     if (savedCharId) {
-      supa.from('characters').select('*').eq('id', savedCharId).single().then(({ data }) => {
-        if (data) {
-          activeChar = data;
-          document.getElementById('chat-title-text').textContent = data.name;
-          const inp = document.getElementById('chat-input');
-          if (inp) inp.placeholder = `Habla con ${data.name}...`;
-        }
-        renderWelcomeScreen();
-      });
-    } else {
-      renderWelcomeScreen();
+      const { data } = await supa.from('characters').select('*').eq('id', savedCharId).single();
+      if (data) {
+        activeChar = data;
+        document.getElementById('chat-title-text').textContent = data.name;
+        const inp = document.getElementById('chat-input');
+        if (inp) inp.placeholder = `Habla con ${data.name}...`;
+      }
     }
+    renderWelcomeScreen();
   } else {
     renderWelcomeScreen();
   }
@@ -2502,6 +2605,7 @@ function switchTab(tabId, btn) {
   document.getElementById(tabId).classList.add('active');
   btn.classList.add('active');
   if (tabId === 'tab-rp') loadCharacters();
+  if (tabId === 'tab-core') { syncModalMemoryCount(); loadDocumentsList(); }
 }
 function syncModalMemoryCount() {
   const badge = document.getElementById('memory-count-badge').textContent;
@@ -2592,7 +2696,7 @@ async function saveCharacter() {
     }
   }
 
-  const { error } = await supa.from('characters').insert({
+  const { data: newChar, error } = await supa.from('characters').insert({
     user_id: currentUser.id,
     name,
     description:      document.getElementById('char-desc').value.trim(),
@@ -2600,7 +2704,7 @@ async function saveCharacter() {
     example_dialogue: document.getElementById('char-dialogue').value.trim(),
     avatar_url,
     is_public: document.getElementById('char-is-public').checked
-  });
+  }).select().single();
 
   if (error) { toast('Error al guardar: ' + error.message, 'error'); return; }
   toast('✅ Personaje guardado', 'success', 2000);
@@ -2614,6 +2718,8 @@ async function saveCharacter() {
   charAvatarFile = null;
   loadCharacters();
   loadRPCharactersGrid();
+  // Auto-seleccionar el nuevo personaje si se creó exitosamente
+  if (newChar) selectCharacter(newChar.id);
 }
 
 async function loadCharacters() {
@@ -2663,7 +2769,6 @@ function selectCharacter(id) {
     const container = document.getElementById('messages');
     container.innerHTML = '';
     renderMessage('ai', `*${escapeHtml(data.name)} está aquí* — ¡Hola! ¿De qué quieres hablar?`);
-    chatHistory = [];
     loadCharacters();
     toast(`✨ Personaje "${data.name}" seleccionado`, 'success', 2000);
     closeModal();
@@ -2685,72 +2790,32 @@ async function deleteCharacter(id) {
 }
 
 // ============================================================
-//  CREATE CHARACTER MODAL (standalone, with public toggle)
+//  CREATE CHARACTER MODAL — Unificado: redirige a Settings > RP
+//  Se elimina el formulario duplicado. El modal standalone ahora
+//  abre el Settings modal en la pestaña de personajes RP.
 // ============================================================
-let ccharAvatarFile = null;
+// ccharAvatarFile ya no existe — se usa charAvatarFile del form unificado
 
 function openCreateCharModal() {
-  document.getElementById('create-char-modal').classList.add('open');
+  // En lugar de abrir un modal duplicado, abrimos Settings > tab RP
+  openModal();
+  // Activar la tab de RP directamente
+  const tabBtn = document.querySelector('.modal-tab:nth-child(3)');
+  if (tabBtn) switchTab('tab-rp', tabBtn);
 }
+
 function closeCreateCharModal() {
-  document.getElementById('create-char-modal').classList.remove('open');
+  // Compatibilidad: si algo llama a esto, simplemente cerrar el modal principal
+  closeModal();
 }
+
 function handleCreateCharOverlayClick(e) {
   if (e.target === document.getElementById('create-char-modal')) closeCreateCharModal();
 }
-function previewCCharAvatar(input) {
-  if (!input.files[0]) return;
-  ccharAvatarFile = input.files[0];
-  const reader = new FileReader();
-  reader.onload = e => {
-    const el = document.getElementById('cchar-avatar-preview');
-    el.innerHTML = `<img src="${e.target.result}" alt="avatar">`;
-  };
-  reader.readAsDataURL(ccharAvatarFile);
-}
 
+// saveNewCharacter ahora es un alias de saveCharacter (form unificado en tab-rp)
 async function saveNewCharacter() {
-  if (!currentUser) return;
-  const name = document.getElementById('cchar-name').value.trim();
-  if (!name) { toast('El nombre es obligatorio', 'warning'); return; }
-
-  let avatar_url = '';
-  if (ccharAvatarFile) {
-    const ext  = ccharAvatarFile.name.split('.').pop();
-    const path = `${currentUser.id}/${Date.now()}.${ext}`;
-    const { error: upErr } = await supa.storage.from('avatars').upload(path, ccharAvatarFile);
-    if (!upErr) {
-      const { data: urlData } = supa.storage.from('avatars').getPublicUrl(path);
-      avatar_url = urlData.publicUrl;
-    }
-  }
-
-  const isPublic = document.getElementById('cchar-is-public').checked;
-  const { data: newChar, error } = await supa.from('characters').insert({
-    user_id:          currentUser.id,
-    name,
-    description:      document.getElementById('cchar-desc').value.trim(),
-    personality:      document.getElementById('cchar-personality').value.trim(),
-    example_dialogue: document.getElementById('cchar-dialogue').value.trim(),
-    avatar_url,
-    is_public:        isPublic
-  }).select().single();
-
-  if (error) { toast('Error al guardar: ' + error.message, 'error'); return; }
-  toast(`✅ Personaje "${name}" creado`, 'success', 2000);
-
-  // Reset form
-  document.getElementById('cchar-name').value = '';
-  document.getElementById('cchar-desc').value = '';
-  document.getElementById('cchar-personality').value = '';
-  document.getElementById('cchar-dialogue').value = '';
-  document.getElementById('cchar-is-public').checked = false;
-  document.getElementById('cchar-avatar-preview').innerHTML = '<span id="cchar-avatar-emoji">🧑‍🎨</span>';
-  ccharAvatarFile = null;
-
-  // Auto-select the new character
-  if (newChar) selectCharacter(newChar.id);
-  else { closeCreateCharModal(); loadCharacters(); loadRPCharactersGrid(); }
+  await saveCharacter();
 }
 
 // ============================================================
@@ -2817,7 +2882,11 @@ function searchRPCharacters(query) {
 }
 
 // ============================================================
-//  FILE ATTACH (PDF/TXT → RAG, image → preview)
+//  FILE ATTACH (PDF/TXT → inyección directa en el prompt)
+//  Fix 4: Flujo ChatGPT-style. El texto del archivo se extrae
+//  y se guarda en pendingFile. Al enviar, se inyecta en el
+//  contexto de ESE mensaje. No hay paso intermedio obligatorio.
+//  El botón "Subir a Memoria" sigue disponible como opción extra.
 // ============================================================
 async function handleFileAttach(input) {
   if (!input.files[0]) return;
@@ -2825,22 +2894,19 @@ async function handleFileAttach(input) {
   const ext  = file.name.split('.').pop().toLowerCase();
 
   if (['png','jpg','jpeg','webp'].includes(ext)) {
-    // Image: show preview only (could be extended to character avatar)
     toast(`Imagen adjuntada: ${file.name}. Para usarla en un personaje, ve a Ajustes > Personajes RP.`, 'info', 4000);
     return;
   }
 
-  // PDF or TXT: extract text and upload to RAG
+  // PDF o TXT: extraer texto y guardar en pendingFile
   let text = '';
   if (ext === 'txt') {
     text = await file.text();
   } else if (ext === 'pdf') {
     toast('Extrayendo texto del PDF...', 'info', 2000);
-    // Read raw bytes and extract text naively (works for simple PDFs)
     const arrayBuf = await file.arrayBuffer();
     const bytes    = new Uint8Array(arrayBuf);
     const raw      = new TextDecoder('latin1').decode(bytes);
-    // Extract text streams from PDF
     const matches  = [...raw.matchAll(/stream([\s\S]*?)endstream/g)];
     text = matches.map(m => m[1].replace(/[^\x20-\x7E\n]/g, ' ')).join(' ').replace(/\s+/g,' ').trim();
     if (!text || text.length < 20) {
@@ -2848,18 +2914,20 @@ async function handleFileAttach(input) {
       return;
     }
   } else {
-    toast('Formato no soportado. Usa PDF, TXT, PNG, JPG o WebP.', 'warning');
+    toast('Formato no soportado. Usa PDF o TXT.', 'warning');
     return;
   }
 
   pendingFile = { name: file.name, text };
   const bar = document.getElementById('file-preview-bar');
   bar.innerHTML = `<div class="file-preview">
-    📄 <span style="flex:1">${escapeHtml(file.name)}</span>
-    <span class="btn-sm btn-accent" style="padding:4px 10px;cursor:pointer" onclick="uploadPendingFile()">Subir a Memoria</span>
-    <span class="file-preview-del" onclick="clearPendingFile()">✕</span>
+    📄 <span style="flex:1;font-weight:500">${escapeHtml(file.name)}</span>
+    <span style="font-size:11px;color:var(--text-3);margin-right:6px;">Se enviará con tu próximo mensaje</span>
+    <span class="btn-sm btn-ghost" style="padding:3px 8px;font-size:11px;cursor:pointer" onclick="uploadPendingFile()" title="Subir a memoria permanente">🧠 +Memoria</span>
+    <span class="file-preview-del" onclick="clearPendingFile()" style="margin-left:4px;">✕</span>
   </div>`;
   input.value = '';
+  toast(`📄 "${file.name}" listo. Escribe tu mensaje y envía.`, 'info', 3000);
 }
 
 async function uploadPendingFile() {
@@ -2870,7 +2938,7 @@ async function uploadPendingFile() {
     const chunks = chunkText(text, 500);
     for (const chunk of chunks) {
       const emb = await getEmbedding(chunk);
-      await insertDocument(chunk, emb);
+      await insertDocument(chunk, emb, name); // Fix 5: pasar nombre como source
     }
     await countDocuments();
     toast(`✅ ${chunks.length} fragmentos de "${name}" añadidos a la memoria`, 'success', 4000);
@@ -2895,7 +2963,7 @@ async function renderHistoryList() {
   const list  = document.getElementById('history-list');
   const empty = document.getElementById('history-empty');
   const { data: chats } = await supa.from('chats')
-    .select('id,title,mode,updated_at')
+    .select('id,title,mode,updated_at,character_id')
     .eq('user_id', currentUser.id)
     .order('updated_at', { ascending: false })
     .limit(50);
@@ -2906,94 +2974,261 @@ async function renderHistoryList() {
     return;
   }
   if (empty) empty.style.display = 'none';
+
+  const rpCharIds = [...new Set(
+    chats.filter(c => c.mode === 'rp' && c.character_id).map(c => c.character_id)
+  )];
+  const rpCharNameById = {};
+  if (rpCharIds.length > 0) {
+    const { data: rpChars } = await supa.from('characters').select('id,name').in('id', rpCharIds);
+    (rpChars || []).forEach(ch => { rpCharNameById[ch.id] = ch.name; });
+  }
+
   chats.forEach(chat => {
+    const displayTitle = chat.mode === 'rp'
+      ? (rpCharNameById[chat.character_id] || chat.title || 'Personaje RP')
+      : (chat.title || 'Chat');
     const item = document.createElement('div');
     item.className = 'history-item' + (chat.id === activeChatId ? ' active' : '');
     item.dataset.id = chat.id;
     item.innerHTML = `
       <span class="history-item-icon">${chat.mode === 'rp' ? '✨' : '💬'}</span>
-      <span class="history-item-title">${escapeHtml(chat.title)}</span>
+      <span class="history-item-title">${escapeHtml(displayTitle)}</span>
+      ${chat.mode === 'general' ? `<span class="history-item-edit" title="Renombrar">✏️</span>` : ''}
       <span class="history-item-del" title="Eliminar" onclick="event.stopPropagation();deleteChat('${chat.id}')">✕</span>
     `;
+    const editBtn = item.querySelector('.history-item-edit');
+    if (editBtn) {
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        renameChat(chat.id, displayTitle);
+      });
+    }
     item.addEventListener('click', () => loadChatById(chat.id));
     list.appendChild(item);
   });
 }
 
+async function renameChat(id, currentTitle = '') {
+  const next = prompt('Nuevo nombre del chat (modo general):', currentTitle || '');
+  if (next === null) return;
+  const clean = next.trim().slice(0, 80);
+  if (!clean) {
+    toast('El nombre no puede estar vacío', 'warning');
+    return;
+  }
+  const { error } = await supa.from('chats')
+    .update({ title: clean, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', currentUser.id)
+    .eq('mode', 'general');
+  if (error) {
+    toast('No se pudo renombrar: ' + error.message, 'error');
+    return;
+  }
+  await renderHistoryList();
+  toast('✏️ Nombre actualizado', 'success', 1800);
+}
+
 async function deleteChat(id) {
   await supa.from('chats').delete().eq('id', id);
-  if (activeChatId === id) { activeChatId = null; clearChat(false); }
+  if (activeChatId === id) {
+    activeChatId = null;
+    localStorage.removeItem('shizuku_active_chat');
+    clearChat(false);
+  }
   renderHistoryList();
 }
 
 async function loadChatById(id) {
+  // Evitar recargar el mismo chat
+  if (activeChatId === id) { closeSidebar(); return; }
+
   activeChatId = id;
   chatHistory  = [];
+  msgRegistry  = [];
+  pinnedMessages = [];
   const container = document.getElementById('messages');
   container.innerHTML = '';
 
+  // Persistir en localStorage y marcar activo en lista inmediatamente
+  localStorage.setItem('shizuku_active_chat', id);
+  document.querySelectorAll('.history-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === id);
+  });
+
   // Get chat metadata to restore mode
   const { data: chatMeta } = await supa.from('chats').select('mode,character_id').eq('id', id).single();
-  if (chatMeta && chatMeta.mode && chatMeta.mode !== appMode) {
-    // Switch mode silently (without clearing chat)
-    appMode = chatMeta.mode;
-    localStorage.setItem('shizuku_mode', appMode);
-    document.getElementById('mode-btn-general').classList.toggle('active', appMode === 'general');
-    document.getElementById('mode-btn-rp').classList.toggle('active', appMode === 'rp');
-    document.getElementById('chat-mode-label').textContent = appMode === 'rp' ? 'Modo RP' : 'General';
-    document.getElementById('rp-bg').style.display = appMode === 'rp' ? 'block' : 'none';
-    document.body.classList.toggle('rp-mode', appMode === 'rp');
+  if (chatMeta) {
+    // Restore character if it changed
+    if (chatMeta.character_id && (!activeChar || activeChar.id !== chatMeta.character_id)) {
+      const { data: charData } = await supa.from('characters').select('*').eq('id', chatMeta.character_id).single();
+      if (charData) {
+        activeChar = charData;
+        localStorage.setItem('shizuku_active_char', charData.id);
+        document.getElementById('chat-title-text').textContent = charData.name;
+        const inp = document.getElementById('chat-input');
+        if (inp) inp.placeholder = `Habla con ${charData.name}...`;
+      }
+    }
+    const newMode = chatMeta.mode || 'general';
+    if (newMode !== appMode) {
+      appMode = newMode;
+      localStorage.setItem('shizuku_mode', appMode);
+      document.getElementById('mode-btn-general').classList.toggle('active', appMode === 'general');
+      document.getElementById('mode-btn-rp').classList.toggle('active', appMode === 'rp');
+      document.getElementById('chat-mode-label').textContent = appMode === 'rp' ? 'Modo RP' : 'General';
+      document.getElementById('rp-bg').style.display = appMode === 'rp' ? 'block' : 'none';
+      document.body.classList.toggle('rp-mode', appMode === 'rp');
+      document.getElementById('pins-btn').style.display = appMode === 'rp' ? 'flex' : 'none';
+    }
   }
 
-  msgRegistry = [];
-  pinnedMessages = [];
-  const { data: msgs } = await supa.from('messages')
+  let msgs = null;
+  let msgsErr = null;
+  let pinColumnAvailable = true;
+  ({ data: msgs, error: msgsErr } = await supa.from('messages')
     .select('id,role,content,context_count,is_pinned')
     .eq('chat_id', id)
-    .order('created_at', { ascending: true });
-  if (!msgs || msgs.length === 0) { renderWelcomeScreen(); }
-  else {
-    msgs.forEach(m => {
-      if (m.is_pinned) {
-        pinnedMessages.push({ id: m.id, role: m.role === 'assistant' ? 'ai' : 'user', text: m.content });
-      }
-      renderMessage(m.role === 'assistant' ? 'ai' : 'user', m.content, m.context_count || 0, m.id);
-      chatHistory.push({ role: m.role, content: m.content });
-    });
-    updatePinsUI();
+    .order('created_at', { ascending: true }));
+
+  if (msgsErr && /is_pinned/i.test(msgsErr.message || '')) {
+    pinColumnAvailable = false;
+    ({ data: msgs, error: msgsErr } = await supa.from('messages')
+      .select('id,role,content,context_count')
+      .eq('chat_id', id)
+      .order('created_at', { ascending: true }));
   }
-  renderHistoryList();
+
+  if (msgsErr) { console.error('Error cargando mensajes:', msgsErr); }
+
+  if (!msgs || msgs.length === 0) {
+    renderWelcomeScreen();
+  } else {
+    const cachedPins = loadPinsFromLocal(id);
+    msgs.forEach(m => {
+      const uiRole = m.role === 'assistant' ? 'ai' : 'user';
+      // Reconstruir chatHistory con el role correcto para la API
+      chatHistory.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content });
+      if (pinColumnAvailable && m.is_pinned) {
+        pinnedMessages.push({ id: m.id, role: uiRole, text: m.content });
+      }
+      renderMessage(uiRole, m.content, m.context_count || 0, m.id);
+    });
+
+    if (cachedPins.length > 0) {
+      cachedPins.forEach(cp => {
+        const byId = msgRegistry.find(m => m.id === cp.id);
+        const byContent = msgRegistry.find(m => m.role === cp.role && m.text === cp.text);
+        const match = byId || byContent;
+        if (match && !pinnedMessages.some(p => p.id === match.id)) {
+          pinnedMessages.push({ id: match.id, role: match.role, text: match.text });
+        }
+      });
+    }
+
+    pinnedMessages.forEach(p => {
+      const entry = msgRegistry.find(m => m.id === p.id);
+      applyPinBadge(entry);
+    });
+
+    updatePinsUI();
+    savePinsToLocal();
+    scrollBottom();
+  }
   closeSidebar();
 }
 
 async function newChat() {
   activeChatId = null;
   chatHistory  = [];
+  localStorage.removeItem('shizuku_active_chat');
   await renderHistoryList();
   clearChat(false);
 }
 
-async function autoSaveChat(userMsg, replyMsg, contextCount) {
+async function autoSaveChat(userMsg, replyMsg, contextCount, userMsgId = null, aiMsgId = null) {
   if (!currentUser) return;
   if (!activeChatId) {
-    const title = userMsg.slice(0, 42) + (userMsg.length > 42 ? '…' : '');
-    const { data } = await supa.from('chats').insert({
+    const title = (appMode === 'rp' && activeChar && activeChar.name)
+      ? activeChar.name
+      : (userMsg.slice(0, 42) + (userMsg.length > 42 ? '…' : ''));
+    const { data, error } = await supa.from('chats').insert({
       user_id: currentUser.id,
       title,
       mode: appMode,
+      character_id: (appMode === 'rp' && activeChar) ? activeChar.id : null,
       updated_at: new Date().toISOString()
     }).select('id').single();
-    if (data) activeChatId = data.id;
+    if (error) { console.error('Error creando chat:', error); return; }
+    if (data) {
+      activeChatId = data.id;
+      localStorage.setItem('shizuku_active_chat', activeChatId);
+      renderHistoryList();
+    }
   } else {
-    await supa.from('chats').update({ updated_at: new Date().toISOString() }).eq('id', activeChatId);
+    const chatUpdate = { updated_at: new Date().toISOString() };
+    if (appMode === 'rp' && activeChar && activeChar.name) chatUpdate.title = activeChar.name;
+    await supa.from('chats').update(chatUpdate).eq('id', activeChatId);
+    localStorage.setItem('shizuku_active_chat', activeChatId);
+    document.querySelectorAll('.history-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.id === activeChatId);
+    });
   }
+
   if (activeChatId) {
-    await supa.from('messages').insert([
-      { chat_id: activeChatId, user_id: currentUser.id, role: 'user',      content: userMsg,  context_count: 0 },
-      { chat_id: activeChatId, user_id: currentUser.id, role: 'assistant', content: replyMsg, context_count: contextCount }
-    ]);
+    // Dos inserts separados → created_at distinto → orden correcto al recargar
+    const userRow = { chat_id: activeChatId, user_id: currentUser.id, role: 'user', content: userMsg, context_count: 0 };
+    if (userMsgId) userRow.id = userMsgId;
+    let savedUserId = null;
+    let userRes = await supa.from('messages').insert(userRow).select('id').single();
+    if (userRes.error && userMsgId) {
+      delete userRow.id;
+      userRes = await supa.from('messages').insert(userRow).select('id').single();
+    }
+    if (userRes.error) {
+      console.error('Error guardando msg usuario:', userRes.error);
+    } else {
+      savedUserId = userRes.data?.id || null;
+    }
+
+    const aiRow = { chat_id: activeChatId, user_id: currentUser.id, role: 'assistant', content: replyMsg, context_count: contextCount };
+    if (aiMsgId) aiRow.id = aiMsgId;
+    let savedAiId = null;
+    let aiRes = await supa.from('messages').insert(aiRow).select('id').single();
+    if (aiRes.error && aiMsgId) {
+      delete aiRow.id;
+      aiRes = await supa.from('messages').insert(aiRow).select('id').single();
+    }
+    if (aiRes.error) {
+      console.error('Error guardando msg IA:', aiRes.error);
+    } else {
+      savedAiId = aiRes.data?.id || null;
+    }
+
+    return { userId: savedUserId, aiId: savedAiId };
   }
-  renderHistoryList();
+
+  return null;
+}
+
+async function resyncChatToDb() {
+  if (!currentUser || !activeChatId) return;
+  try {
+    await supa.from('messages').delete().eq('chat_id', activeChatId);
+    for (const msg of chatHistory) {
+      await supa.from('messages').insert({
+        chat_id: activeChatId,
+        user_id: currentUser.id,
+        role:    msg.role,
+        content: msg.content,
+        context_count: 0
+      });
+    }
+    await supa.from('chats').update({ updated_at: new Date().toISOString() }).eq('id', activeChatId);
+  } catch(e) {
+    console.error('Error en resyncChatToDb:', e);
+  }
 }
 
 function renderWelcomeScreen() {
@@ -3127,9 +3362,11 @@ async function matchDocumentsAuto(embedding) {
 // ============================================================
 //  SUPABASE — Insert document (user-scoped)
 // ============================================================
-async function insertDocument(content, embedding) {
+async function insertDocument(content, embedding, source = null) {
   if (!currentUser) return;
-  const { error } = await supa.from('documents').insert({ content, embedding, user_id: currentUser.id });
+  const row = { content, embedding, user_id: currentUser.id };
+  if (source) row.source = source;
+  const { error } = await supa.from('documents').insert(row);
   if (error) throw new Error('Supabase insert error: ' + error.message);
 }
 
@@ -3229,6 +3466,18 @@ function renderMessage(role, text, contextCount = 0, msgId = null) {
   return row;
 }
 
+function replaceMessageId(oldId, newId) {
+  if (!oldId || !newId || oldId === newId) return;
+  const entry = msgRegistry.find(m => m.id === oldId);
+  if (entry) {
+    entry.id = newId;
+    if (entry.el) entry.el.dataset.msgId = newId;
+  }
+  pinnedMessages.forEach(p => {
+    if (p.id === oldId) p.id = newId;
+  });
+}
+
 // ============================================================
 //  TYPING INDICATOR
 // ============================================================
@@ -3301,11 +3550,21 @@ async function sendMessage() {
     return;
   }
 
+  const attachedFile = pendingFile ? { ...pendingFile } : null;
+  if (attachedFile) clearPendingFile();
+
   isProcessing = true;
   input.value  = '';
   autoResize(input);
   document.getElementById('send-btn').disabled = true;
-  renderMessage('user', userMsg);
+
+  const displayMsg = attachedFile
+    ? `${userMsg}\n\n📄 *[Archivo adjunto: ${attachedFile.name}]*`
+    : userMsg;
+
+  // IDs pre-generados para que DOM y Supabase compartan el mismo UUID
+  const userMsgId = crypto.randomUUID();
+  renderMessage('user', displayMsg, 0, userMsgId);
   showTyping();
   setStatus('busy', 'Buscando en memoria...');
   const ragInd = document.getElementById('rag-indicator');
@@ -3316,25 +3575,19 @@ async function sendMessage() {
     setStatus('busy', 'Generando embedding...');
     const queryEmbedding = await getEmbedding(userMsg);
 
-    // --- BÚSQUEDA DUAL ---
-    // 1) Memorias con umbral normal (configurado por usuario)
     setStatus('busy', 'Consultando memoria RAG...');
     const docs = await matchDocuments(queryEmbedding);
 
-    // 2) Auto-RAG: busca fragmentos de documentos subidos con umbral permisivo
-    //    para garantizar que los talleres/docs subidos SIEMPRE se usen si son relevantes
     setStatus('busy', 'Consultando documentos adjuntos...');
     const autoDocs = await matchDocumentsAuto(queryEmbedding);
 
-    // Deduplicar: quitar de autoDocs los que ya están en docs (por contenido)
     const docsContents = new Set(docs.map(d => d.content));
     const extraDocs = autoDocs.filter(d => !docsContents.has(d.content));
 
-    let contextCount = docs.length + extraDocs.length;
+    contextCount = docs.length + extraDocs.length;
 
     let systemPrompt = getSystemPrompt();
 
-    // Inyectar memorias normales
     if (docs.length > 0) {
       const contextText = docs.map((d, i) =>
         `[Memoria ${i + 1} | Similitud: ${(d.similarity * 100).toFixed(1)}%]\n${d.content}`
@@ -3342,7 +3595,6 @@ async function sendMessage() {
       systemPrompt += `\n\n## Contexto de Memoria Relevante:\n\n${contextText}`;
     }
 
-    // Inyectar documentos adjuntos (Auto-RAG) — siempre se incluyen si hay coincidencia
     if (extraDocs.length > 0) {
       const docText = extraDocs.map((d, i) =>
         `[Fragmento ${i + 1} | Similitud: ${(d.similarity * 100).toFixed(1)}%]\n${d.content}`
@@ -3351,26 +3603,40 @@ async function sendMessage() {
     }
 
     setStatus('busy', 'Pensando...');
-    // General: last 20 turns; RP: full history (pins are in system prompt)
     const histSlice = appMode === 'rp' ? chatHistory : chatHistory.slice(-20);
+
+    let userContent = userMsg;
+    if (attachedFile) {
+      const fileSnippet = attachedFile.text.length > 12000
+        ? attachedFile.text.slice(0, 12000) + '\n\n[...documento truncado por longitud...]'
+        : attachedFile.text;
+      userContent = `${userMsg}\n\n--- CONTENIDO DEL ARCHIVO "${attachedFile.name}" ---\n${fileSnippet}\n--- FIN DEL ARCHIVO ---`;
+      contextCount++;
+    }
+
     const messages = [
       { role: 'system', content: systemPrompt },
       ...histSlice,
-      { role: 'user',   content: userMsg }
+      { role: 'user',   content: userContent }
     ];
     const reply = await chatCompletion(messages);
 
     hideTyping();
-    renderMessage('ai', reply, contextCount);
+    const aiMsgId = crypto.randomUUID();
+    renderMessage('ai', reply, contextCount, aiMsgId);
 
-    chatHistory.push({ role: 'user',      content: userMsg });
+    chatHistory.push({ role: 'user',      content: displayMsg });
     chatHistory.push({ role: 'assistant', content: reply  });
     if (chatHistory.length > 60) chatHistory = chatHistory.slice(-60);
 
-    await autoSaveChat(userMsg, reply, contextCount);
+    const savedIds = await autoSaveChat(displayMsg, reply, contextCount, userMsgId, aiMsgId);
+    if (savedIds) {
+      replaceMessageId(userMsgId, savedIds.userId);
+      replaceMessageId(aiMsgId, savedIds.aiId);
+    }
 
     setStatus('ok', contextCount > 0
-      ? `Respondió con ${docs.length} memoria${docs.length !== 1 ? 's' : ''}${extraDocs.length > 0 ? ` + ${extraDocs.length} fragmento${extraDocs.length !== 1 ? 's' : ''} de docs` : ''}`
+      ? `Respondió con ${docs.length} memoria${docs.length !== 1 ? 's' : ''}${extraDocs.length > 0 ? ` + ${extraDocs.length} fragmento${extraDocs.length !== 1 ? 's' : ''} de docs` : ''}${attachedFile ? ' + archivo adjunto' : ''}`
       : 'Sin contexto RAG — respuesta general');
 
   } catch (err) {
@@ -3384,6 +3650,68 @@ async function sendMessage() {
     document.getElementById('send-btn').disabled = false;
     ragInd.classList.remove('active');
     input.focus();
+  }
+}
+
+// ============================================================
+//  FIX 5: GESTIÓN DE DOCUMENTOS INDIVIDUALES
+//  Agrupa fragmentos por source (nombre de archivo) y permite
+//  borrar todos los fragmentos de un documento específico.
+// ============================================================
+async function loadDocumentsList() {
+  if (!currentUser) return;
+  const container = document.getElementById('docs-list-container');
+  if (!container) return;
+  container.innerHTML = '<div style="font-size:12px;color:var(--text-3);text-align:center;padding:12px;">Cargando...</div>';
+
+  try {
+    // Traer todos los docs del usuario (solo id y source/content para agrupar)
+    // Supabase no tiene GROUP BY nativo en el cliente, así que traemos todo y agrupamos en JS
+    const { data, error } = await supa.from('documents')
+      .select('id, source')
+      .eq('user_id', currentUser.id)
+      .order('source');
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      container.innerHTML = '<div style="font-size:12px;color:var(--text-3);text-align:center;padding:12px;">No hay documentos en memoria.</div>';
+      return;
+    }
+
+    // Agrupar por source (nombre del archivo). Los fragmentos sin source tienen source = null
+    const groups = {};
+    data.forEach(doc => {
+      const key = doc.source || '[Sin nombre / Texto manual]';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(doc.id);
+    });
+
+    const entries = Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
+    container.innerHTML = entries.map(([source, ids]) => `
+      <div class="doc-list-item">
+        <span class="doc-list-name" title="${escapeHtml(source)}">📄 ${escapeHtml(source)}</span>
+        <span class="doc-list-count">${ids.length} frag.</span>
+        <button class="doc-list-del" onclick="deleteDocumentsBySource('${escapeHtml(source).replace(/'/g, "\\'")}', ${JSON.stringify(ids)})" title="Eliminar este documento">✕</button>
+      </div>
+    `).join('');
+  } catch(e) {
+    container.innerHTML = `<div style="font-size:12px;color:var(--error);text-align:center;padding:12px;">Error: ${e.message}</div>`;
+  }
+}
+
+async function deleteDocumentsBySource(sourceName, ids) {
+  if (!currentUser) return;
+  if (!confirm(`¿Eliminar "${sourceName}" (${ids.length} fragmento${ids.length !== 1 ? 's' : ''})? Esta acción no se puede deshacer.`)) return;
+  try {
+    const { error } = await supa.from('documents').delete().in('id', ids).eq('user_id', currentUser.id);
+    if (error) throw error;
+    toast(`🗑️ "${sourceName}" eliminado (${ids.length} fragmentos)`, 'success', 3000);
+    await countDocuments();
+    syncModalMemoryCount();
+    await loadDocumentsList(); // refrescar la lista
+  } catch(e) {
+    toast('Error al eliminar: ' + e.message, 'error');
   }
 }
 
@@ -3638,7 +3966,7 @@ async function regenerateFrom(userMsg) {
     renderMessage('ai', reply, totalCount);
     chatHistory.push({ role: 'assistant', content: reply });
     setStatus('ok', 'Respuesta regenerada');
-    await autoSaveChat(userMsg, reply, totalCount);
+    await resyncChatToDb();
   } catch(err) {
     hideTyping();
     renderMessage('ai', `❌ **Error:** ${err.message}`);
@@ -3711,30 +4039,34 @@ function togglePinMessage(msgId) {
   if (!entry) return;
 
   const pinIdx = pinnedMessages.findIndex(p => p.id === msgId);
-  if (pinIdx >= 0) {
-    // Unpin
+  const isPinned = pinIdx >= 0;
+
+  if (isPinned) {
     pinnedMessages.splice(pinIdx, 1);
-    // Remove pin badge from DOM
     const badge = entry.el.querySelector('.msg-pin-badge');
     if (badge) badge.remove();
     toast('📌 Mensaje desmarcado', 'info', 1800);
   } else {
-    // Pin
     if (pinnedMessages.length >= 15) {
       toast('⚠️ Máximo 15 mensajes marcados. Desmarca uno primero.', 'warning', 3500);
       return;
     }
     pinnedMessages.push({ id: msgId, role: entry.role, text: entry.text });
-    // Add pin badge to DOM
-    const content = entry.el.querySelector('.msg-content');
-    const sender  = content.querySelector('.msg-sender');
-    const badge   = document.createElement('div');
-    badge.className = 'msg-pin-badge';
-    badge.innerHTML = '📌 Marcado';
-    sender.insertAdjacentElement('afterend', badge);
+    applyPinBadge(entry);
     toast('📌 Mensaje marcado como importante', 'success', 2000);
   }
+
+  // Persistir en Supabase
+  if (currentUser) {
+    supa.from('messages')
+      .update({ is_pinned: !isPinned })
+      .eq('id', msgId)
+      .eq('user_id', currentUser.id)
+      .then(({ error }) => { if (error) console.warn('Pin no persistido:', error.message); });
+  }
+
   updatePinsUI();
+  savePinsToLocal();
 }
 
 function updatePinsUI() {
@@ -3856,10 +4188,17 @@ document.head.appendChild(spinStyle);
 //  INIT — Auth state listener
 // ============================================================
 window.addEventListener('load', () => {
-  // Show auth screen by default, wait for session
+  let appInitialized = false;
+
+  function initApp(user) {
+    if (appInitialized) return;
+    appInitialized = true;
+    onUserLoaded(user);
+  }
+
   supa.auth.getSession().then(({ data: { session } }) => {
     if (session) {
-      onUserLoaded(session.user);
+      initApp(session.user);
     } else {
       document.getElementById('auth-screen').classList.remove('hidden');
     }
@@ -3867,8 +4206,9 @@ window.addEventListener('load', () => {
 
   supa.auth.onAuthStateChange((_event, session) => {
     if (session) {
-      onUserLoaded(session.user);
+      initApp(session.user);
     } else {
+      appInitialized = false;
       currentUser = null;
       showAuthScreen();
     }

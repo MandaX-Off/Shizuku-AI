@@ -1864,6 +1864,62 @@
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
   .create-char-modal-body { padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ===== BETA NOTICE MODAL ===== */
+  .beta-notice-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(6px);
+    z-index: 2600;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: fadeIn 0.2s ease both;
+  }
+  .beta-notice-overlay.open { display: flex; }
+  .beta-notice-card {
+    width: min(620px, 100%);
+    background: var(--bg-panel);
+    border: 1px solid rgba(139,92,246,0.32);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.65);
+    padding: 22px 22px 18px;
+    animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  .beta-notice-title {
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--text-1);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .beta-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(236,72,153,0.16);
+    border: 1px solid rgba(236,72,153,0.35);
+    color: #f9a8d4;
+  }
+  .beta-notice-text {
+    color: var(--text-2);
+    font-size: 13.5px;
+    line-height: 1.72;
+    margin-bottom: 12px;
+  }
+  .beta-notice-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 14px;
+  }
 </style>
 </head>
 <body>
@@ -1906,6 +1962,22 @@
   </div>
 </div>
 
+<div class="beta-notice-overlay" id="beta-notice-modal">
+  <div class="beta-notice-card">
+    <div class="beta-notice-title">🌸 Bienvenida <span class="beta-badge">Beta</span></div>
+    <div class="beta-notice-text">
+      Shizuku es un asistente con memoria persistente: conversa, enseña contexto y deja que recuerde lo importante
+      para responder mejor la próxima vez. También puedes jugar en modo rol con personajes propios.
+      <br><br>
+      Esta versión está en beta: aún faltan funciones y pulido, así que puede haber fallos o cambios seguidos.
+      Gracias por usarla — quienes la prueban ahora formáis parte de las personas que ayudan a que Shizuku mejore.
+    </div>
+    <div class="beta-notice-actions">
+      <button class="btn-sm btn-primary" onclick="closeBetaNotice()">Entendido</button>
+    </div>
+  </div>
+</div>
+
 <div class="mobile-overlay" id="mobile-overlay" onclick="closeSidebar()"></div>
 
 <div class="app" id="app">
@@ -1918,7 +1990,7 @@
         <span class="logo-text">Shizuku AI</span>
       </div>
       <!-- CAMBIO 1: subtítulo actualizado -->
-      <div class="logo-sub">Memoria · RAG · Groq</div>
+      <div class="logo-sub">Memoria · RAG · IA</div>
     </div>
 
     <!-- New Chat Button -->
@@ -1927,8 +1999,7 @@
       Nuevo Chat
     </button>
 
-    <!-- CAMBIO 1: API Config → Groq -->
-    <!-- API config moved to Settings Modal -->
+    <!-- Modelo y ajustes → pestaña en el modal de configuración -->
 
     <!-- Chat History -->
     <div class="history-label">Historial</div>
@@ -2098,7 +2169,7 @@
       <div class="modal-close" onclick="closeModal()">✕</div>
     </div>
     <div class="modal-tabs">
-      <button class="modal-tab active" onclick="switchTab('tab-api', this)">API & Chat</button>
+      <button class="modal-tab active" onclick="switchTab('tab-api', this)">Modelo y chat</button>
       <button class="modal-tab" onclick="switchTab('tab-core', this)">Core de Shizuku</button>
       <button class="modal-tab" onclick="switchTab('tab-rp', this)">✨ Personajes RP</button>
     </div>
@@ -2107,11 +2178,9 @@
       <!-- TAB: API & Chat -->
       <div class="modal-tab-content active" id="tab-api">
         <div class="modal-section">
-          <div class="modal-section-title">Configuración API</div>
-          <div class="modal-field">
-            <div class="field-label">Groq API Key</div>
-            <input type="password" id="groq-key" class="field-input"
-                   placeholder="gsk_..." autocomplete="off" />
+          <div class="modal-section-title">Modelo de chat</div>
+          <div class="modal-field" style="font-size:12px;color:var(--text-3);line-height:1.6;padding:10px 12px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);">
+            Las respuestas de la IA se generan en el servidor. No hace falta introducir contraseñas ni claves de proveedores en este navegador.
           </div>
           <div class="modal-field">
             <div class="field-label">Modelo</div>
@@ -2303,7 +2372,6 @@
 // ============================================================
 const SUPABASE_URL  = 'https://oupzxtgvhhjybfjeyojq.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91cHp4dGd2aGhqeWJmamV5b2pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTY4MzMsImV4cCI6MjA5MDM3MjgzM30.SFCE_0OqDCz28Rzf8wXDAH2GydiCv_LnjOT-Hx1TM2Q';
-const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
@@ -2324,7 +2392,6 @@ let msgRegistry    = [];        // Ordered array of { id, role, text } for edit/
 // ============================================================
 //  UTILS
 // ============================================================
-function getApiKey()    { return document.getElementById('groq-key').value.trim(); }
 function getModel()     { return document.getElementById('model-select').value; }
 function getThreshold() { return parseFloat(document.getElementById('threshold').value) || 0.70; }
 
@@ -2553,11 +2620,10 @@ async function onUserLoaded(user) {
 }
 
 // ============================================================
-//  SETTINGS — localStorage (API key nunca va a BD)
+//  SETTINGS — localStorage (preferencias locales; la IA va por Edge Function)
 // ============================================================
 function loadSettings() {
   const s = JSON.parse(localStorage.getItem('shizuku_settings') || '{}');
-  if (s.groqKey)      document.getElementById('groq-key').value = s.groqKey;
   if (s.model)        document.getElementById('model-select').value = s.model;
   if (s.threshold)    document.getElementById('threshold').value = s.threshold;
   // System prompt from Supabase profile
@@ -2573,7 +2639,7 @@ async function loadSystemPromptFromDB() {
 }
 
 function saveSettings() {
-  const s = { groqKey: getApiKey(), model: getModel(), threshold: getThreshold() };
+  const s = { model: getModel(), threshold: getThreshold() };
   localStorage.setItem('shizuku_settings', JSON.stringify(s));
   // Save system prompt to Supabase
   const sp = (document.getElementById('system-prompt-input').value || '').trim();
@@ -2618,7 +2684,6 @@ function syncModalMemoryCount() {
 function clearAllData() {
   if (!confirm('¿Borrar TODOS los datos (chats, configuración)? Esta acción no se puede deshacer.')) return;
   localStorage.removeItem('shizuku_settings');
-  document.getElementById('groq-key').value = '';
   document.getElementById('model-select').value = 'llama-3.3-70b-versatile';
   document.getElementById('threshold').value = '0.70';
   document.getElementById('system-prompt-input').value = '';
@@ -3385,22 +3450,33 @@ async function countDocuments() {
 }
 
 // ============================================================
-//  GROQ — Chat completion
+//  CHAT — Supabase Edge Function (clave del proveedor solo en el servidor)
 // ============================================================
 async function chatCompletion(messages) {
-  const key = getApiKey();
-  if (!key) throw new Error('Falta la Groq API Key');
-  const res = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: getModel(), messages, temperature: 0.7, max_tokens: 2048 })
+  const { data, error } = await supa.functions.invoke('shizuku-chat', {
+    body: { model: getModel(), messages, temperature: 0.7, max_tokens: 2048 }
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `Groq error ${res.status}`);
+  if (error) {
+    let msg = error.message || 'Error al contactar el servicio de IA';
+    const ctx = error.context;
+    if (ctx) {
+      try {
+        const b = ctx.body;
+        if (typeof b === 'string') {
+          const j = JSON.parse(b);
+          if (j?.error) msg = typeof j.error === 'string' ? j.error : (j.error?.message || msg);
+        }
+      } catch (_) {}
+    }
+    throw new Error(msg);
   }
-  const data = await res.json();
-  return data.choices[0].message.content;
+  if (data && data.error) {
+    throw new Error(typeof data.error === 'string' ? data.error : (data.error?.message || 'Error del servicio de IA'));
+  }
+  if (!data || typeof data.content !== 'string') {
+    throw new Error('Respuesta inválida del servicio de IA');
+  }
+  return data.content;
 }
 
 // ============================================================
@@ -3541,10 +3617,6 @@ async function sendMessage() {
   if (!userMsg) return;
 
   if (!currentUser) { toast('Debes iniciar sesión primero', 'warning'); return; }
-  if (!getApiKey()) {
-    toast('Por favor ingresa tu Groq API Key en los Ajustes ⚙️', 'warning');
-    openModal(); return;
-  }
   if (appMode === 'rp' && !activeChar) {
     toast('✨ Selecciona o crea un personaje primero', 'warning', 3500);
     return;
@@ -4114,7 +4186,7 @@ const HELP_CONTENT = {
       {
         title: 'Memoria y configuración',
         items: [
-          { icon: '⚙️', text: '<strong>Ajustes:</strong> Configura tu Groq API Key, modelo y personalidad de Shizuku en el botón ⚙️ de abajo a la izquierda.' },
+          { icon: '⚙️', text: '<strong>Ajustes:</strong> Elige modelo, umbral RAG y personalidad de Shizuku en el botón ⚙️ de abajo a la izquierda.' },
           { icon: '📄', text: '<strong>Archivos:</strong> Adjunta PDFs o TXTs con el clip 📎 para subirlos a la memoria RAG.' },
           { icon: '⚡', text: '<strong>Indicador RAG:</strong> La píldora "⚡ N memorias usadas" indica cuántos fragmentos de memoria se usaron en esa respuesta.' },
         ]
@@ -4177,6 +4249,14 @@ function handleHelpOverlayClick(e) {
   if (e.target === document.getElementById('help-modal')) closeHelpModal();
 }
 
+function openBetaNotice() {
+  document.getElementById('beta-notice-modal').classList.add('open');
+}
+
+function closeBetaNotice() {
+  document.getElementById('beta-notice-modal').classList.remove('open');
+}
+
 // ============================================================
 //  SPIN ANIMATION
 // ============================================================
@@ -4188,6 +4268,8 @@ document.head.appendChild(spinStyle);
 //  INIT — Auth state listener
 // ============================================================
 window.addEventListener('load', () => {
+  openBetaNotice();
+
   let appInitialized = false;
 
   function initApp(user) {

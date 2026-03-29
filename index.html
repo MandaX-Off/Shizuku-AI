@@ -833,7 +833,50 @@
     .sidebar.open { left: 0; }
     .messages-container { padding: 16px 14px 12px; }
     .input-area { padding: 10px 14px 16px; }
-    .chat-topbar { padding: 12px 16px; }
+    .chat-topbar {
+      padding: 12px 14px;
+      padding-top: max(12px, env(safe-area-inset-top, 0px));
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .chat-topbar > div:first-child {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .chat-topbar > div:last-child {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+    }
+    .chat-title {
+      min-width: 0;
+      flex: 1 1 auto;
+      overflow: hidden;
+    }
+    .chat-title span:first-child {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: bottom;
+    }
+    .mode-toggle { flex-shrink: 0; }
+    .topbar-actions {
+      flex: 1 1 auto;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+    }
     .msg-content { max-width: 88%; }
     .mobile-menu-btn { display: flex !important; }
   }
@@ -1794,8 +1837,23 @@
       padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     }
     .pins-panel { width: 100%; right: -100%; }
+    /* Insignia del modelo: oculta en estrecho; el modelo sigue en Ajustes */
     .model-badge { display: none; }
-    .topbar-actions .icon-btn:not(#mem-badge-topbar) { display: none; }
+    /* En móvil ya no ocultamos pin / limpiar / memorias: el layout en 2 filas evita recortes */
+    .topbar-actions .icon-btn {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+    }
+    #mem-badge-topbar {
+      width: auto;
+      min-width: unset;
+      padding: 0 8px;
+    }
+    .topbar-actions .help-btn {
+      width: 32px;
+      height: 32px;
+    }
   }
 
   .doc-list-item {

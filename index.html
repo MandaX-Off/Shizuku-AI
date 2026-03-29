@@ -2344,6 +2344,11 @@
                 placeholder="Usuario: Hola&#10;Personaje: *se ruboriza* A-ah... hola..."></textarea>
             </div>
             <div class="modal-field">
+              <div class="field-label">Saludo al abrir el chat</div>
+              <textarea id="char-greeting" class="system-prompt-textarea" style="min-height:56px;max-height:100px;"
+                placeholder="Primera frase del personaje al elegirlo (ej: *entra al salón* ¡Buenas! ¿En qué puedo ayudarte?). Si lo dejas vacío, se usa un saludo por defecto."></textarea>
+            </div>
+            <div class="modal-field">
               <div class="toggle-row">
                 <div>
                   <div class="toggle-row-label">🌐 Personaje público</div>
@@ -2402,6 +2407,11 @@
         <div class="field-label">Ejemplo de diálogo</div>
         <textarea id="cchar-dialogue" class="system-prompt-textarea" style="min-height:60px;max-height:90px;"
           placeholder="Usuario: Hola&#10;Personaje: *se ruboriza* A-ah... hola..."></textarea>
+      </div>
+      <div class="modal-field">
+        <div class="field-label">Saludo al abrir el chat</div>
+        <textarea id="cchar-greeting" class="system-prompt-textarea" style="min-height:56px;max-height:100px;"
+          placeholder="Primera frase al elegir al personaje. Vacío = saludo por defecto."></textarea>
       </div>
       <div class="modal-field">
         <div class="toggle-row">
@@ -2803,9 +2813,22 @@ function previewCharAvatar(input) {
   reader.readAsDataURL(charAvatarFile);
 }
 
-async function saveCharacter() {
+function previewCCharAvatar(input) {
+  if (!input.files[0]) return;
+  charAvatarFile = input.files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    const el = document.getElementById('cchar-avatar-preview');
+    el.innerHTML = `<img src="${e.target.result}" alt="avatar">`;
+  };
+  reader.readAsDataURL(charAvatarFile);
+}
+
+/** formKind: 'settings' → char-* | 'modal' → cchar-* */
+async function saveCharacter(formKind = 'settings') {
   if (!currentUser) return;
-  const name = document.getElementById('char-name').value.trim();
+  const p = formKind === 'modal' ? 'cchar' : 'char';
+  const name = document.getElementById(`${p}-name`).value.trim();
   if (!name) { toast('El nombre es obligatorio', 'warning'); return; }
 
   let avatar_url = '';
@@ -2819,29 +2842,37 @@ async function saveCharacter() {
     }
   }
 
+  const grEl = document.getElementById(`${p}-greeting`);
+  const greeting = grEl ? grEl.value.trim() : '';
+
   const { data: newChar, error } = await supa.from('characters').insert({
     user_id: currentUser.id,
     name,
-    description:      document.getElementById('char-desc').value.trim(),
-    personality:      document.getElementById('char-personality').value.trim(),
-    example_dialogue: document.getElementById('char-dialogue').value.trim(),
+    description:      document.getElementById(`${p}-desc`).value.trim(),
+    personality:      document.getElementById(`${p}-personality`).value.trim(),
+    example_dialogue: document.getElementById(`${p}-dialogue`).value.trim(),
+    greeting: greeting || null,
     avatar_url,
-    is_public: document.getElementById('char-is-public').checked
+    is_public: document.getElementById(`${p}-is-public`).checked
   }).select().single();
 
   if (error) { toast('Error al guardar: ' + error.message, 'error'); return; }
   toast('✅ Personaje guardado', 'success', 2000);
-  // Reset form
-  document.getElementById('char-name').value = '';
-  document.getElementById('char-desc').value = '';
-  document.getElementById('char-personality').value = '';
-  document.getElementById('char-dialogue').value = '';
-  document.getElementById('char-is-public').checked = false;
-  document.getElementById('char-avatar-preview').innerHTML = '<span id="char-avatar-emoji">🧑‍🎨</span>';
+
+  document.getElementById(`${p}-name`).value = '';
+  document.getElementById(`${p}-desc`).value = '';
+  document.getElementById(`${p}-personality`).value = '';
+  document.getElementById(`${p}-dialogue`).value = '';
+  if (grEl) grEl.value = '';
+  document.getElementById(`${p}-is-public`).checked = false;
+  if (p === 'char') {
+    document.getElementById('char-avatar-preview').innerHTML = '<span id="char-avatar-emoji">🧑‍🎨</span>';
+  } else {
+    document.getElementById('cchar-avatar-preview').innerHTML = '<span id="cchar-avatar-emoji">🧑‍🎨</span>';
+  }
   charAvatarFile = null;
   loadCharacters();
   loadRPCharactersGrid();
-  // Auto-seleccionar el nuevo personaje si se creó exitosamente
   if (newChar) selectCharacter(newChar.id);
 }
 
@@ -2891,7 +2922,11 @@ function selectCharacter(id) {
     updatePinsUI();
     const container = document.getElementById('messages');
     container.innerHTML = '';
-    renderMessage('ai', `*${escapeHtml(data.name)} está aquí* — ¡Hola! ¿De qué quieres hablar?`);
+    const opening = (data.greeting && String(data.greeting).trim())
+      ? String(data.greeting).trim()
+      : `*${escapeHtml(data.name)} está aquí* — ¡Hola! ¿De qué quieres hablar?`;
+    renderMessage('ai', opening);
+    chatHistory.push({ role: 'assistant', content: opening });
     loadCharacters();
     toast(`✨ Personaje "${data.name}" seleccionado`, 'success', 2000);
     closeModal();
@@ -2936,9 +2971,8 @@ function handleCreateCharOverlayClick(e) {
   if (e.target === document.getElementById('create-char-modal')) closeCreateCharModal();
 }
 
-// saveNewCharacter ahora es un alias de saveCharacter (form unificado en tab-rp)
 async function saveNewCharacter() {
-  await saveCharacter();
+  await saveCharacter('modal');
 }
 
 // ============================================================

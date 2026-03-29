@@ -1569,6 +1569,220 @@
   }
   .toggle-switch input:checked + .toggle-slider { background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.4); }
   .toggle-switch input:checked + .toggle-slider::before { background: #10b981; transform: translateX(16px); }
+  /* ===== MESSAGE ACTION MENU (RP) ===== */
+  .msg-action-menu {
+    position: absolute;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    z-index: 500;
+    min-width: 160px;
+    animation: msgMenuIn 0.15s ease both;
+  }
+  @keyframes msgMenuIn {
+    from { opacity: 0; transform: scale(0.94) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .msg-action-btn {
+    display: flex; align-items: center; gap: 9px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12.5px; font-family: var(--font-sans);
+    color: var(--text-2); background: none; border: none;
+    cursor: pointer; text-align: left; width: 100%;
+    transition: all var(--transition);
+  }
+  .msg-action-btn:hover { background: var(--bg-hover); color: var(--text-1); }
+  .msg-action-btn.danger:hover { background: rgba(239,68,68,0.12); color: var(--error); }
+  .msg-action-btn.pin-active { color: var(--warning); }
+
+  /* PIN indicator on messages */
+  .msg-pin-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; color: var(--warning);
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 10px; padding: 2px 7px;
+    margin-bottom: 3px;
+  }
+
+  /* Edit inline */
+  .msg-edit-area {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border-focus);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-size: 14px; font-family: var(--font-sans);
+    color: var(--text-1); outline: none;
+    resize: none; min-height: 60px; line-height: 1.6;
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+  .msg-edit-actions {
+    display: flex; gap: 6px; margin-top: 6px;
+  }
+  .msg-edit-save {
+    padding: 5px 14px; border-radius: var(--radius-sm);
+    font-size: 12px; font-family: var(--font-sans);
+    background: linear-gradient(135deg, var(--accent), #7c3aed);
+    color: #fff; border: none; cursor: pointer; font-weight: 500;
+    transition: all var(--transition);
+  }
+  .msg-edit-save:hover { transform: translateY(-1px); }
+  .msg-edit-cancel {
+    padding: 5px 14px; border-radius: var(--radius-sm);
+    font-size: 12px; font-family: var(--font-sans);
+    background: var(--bg-surface); color: var(--text-2);
+    border: 1px solid var(--border); cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  /* PINS PANEL */
+  .pins-panel {
+    position: fixed; top: 0; right: -360px; height: 100vh;
+    width: 340px; background: var(--bg-panel);
+    border-left: 1px solid var(--border);
+    z-index: 600; display: flex; flex-direction: column;
+    transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+  }
+  .pins-panel.open { right: 0; }
+  .pins-panel-header {
+    padding: 20px 18px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .pins-panel-title {
+    font-size: 14px; font-weight: 600; color: var(--text-1);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pins-panel-count {
+    background: rgba(245,158,11,0.15);
+    color: var(--warning);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 20px; padding: 1px 8px;
+    font-size: 11px; font-weight: 600;
+  }
+  .pins-panel-close {
+    width: 28px; height: 28px;
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 7px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-2); font-size: 14px;
+    transition: all var(--transition);
+  }
+  .pins-panel-close:hover { background: var(--bg-hover); color: var(--text-1); }
+  .pins-panel-body {
+    flex: 1; overflow-y: auto; padding: 12px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .pin-item {
+    background: var(--bg-surface);
+    border: 1px solid rgba(245,158,11,0.15);
+    border-radius: var(--radius-md);
+    padding: 11px 13px;
+    position: relative;
+  }
+  .pin-item-role {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+    color: var(--warning); text-transform: uppercase; margin-bottom: 5px;
+  }
+  .pin-item-text {
+    font-size: 12.5px; color: var(--text-2); line-height: 1.6;
+    max-height: 80px; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+  }
+  .pin-item-del {
+    position: absolute; top: 8px; right: 8px;
+    width: 20px; height: 20px;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-3); font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; transition: all var(--transition);
+  }
+  .pin-item-del:hover { color: var(--error); background: rgba(239,68,68,0.1); }
+  .pins-empty {
+    text-align: center; color: var(--text-3); font-size: 12.5px;
+    padding: 32px 16px; line-height: 1.7;
+  }
+
+  /* HELP BUTTON */
+  .help-btn {
+    width: 28px; height: 28px;
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 13px; font-weight: 700;
+    color: var(--text-3); transition: all var(--transition);
+    flex-shrink: 0;
+  }
+  .help-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: rgba(139,92,246,0.3); }
+
+  /* HELP MODAL */
+  .help-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+    z-index: 2000; align-items: center; justify-content: center;
+    animation: fadeIn 0.2s ease both;
+  }
+  .help-modal-overlay.open { display: flex; }
+  .help-modal {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 480px; max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 64px); overflow-y: auto;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.7), var(--shadow-glow);
+    animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
+    padding: 24px 26px;
+  }
+  .help-modal h3 {
+    font-size: 16px; font-weight: 600; margin-bottom: 16px;
+    background: linear-gradient(135deg, #fff 30%, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .help-section { margin-bottom: 18px; }
+  .help-section h4 {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.8px;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .help-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 8px 10px; border-radius: var(--radius-sm);
+    background: var(--bg-surface); border: 1px solid var(--border);
+    margin-bottom: 5px;
+  }
+  .help-item-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .help-item-text { font-size: 12.5px; color: var(--text-2); line-height: 1.6; }
+  .help-item-text strong { color: var(--text-1); font-weight: 600; }
+  .help-close-btn {
+    width: 100%; padding: 10px;
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text-2);
+    font-size: 13px; font-family: var(--font-sans);
+    cursor: pointer; margin-top: 8px; transition: all var(--transition);
+  }
+  .help-close-btn:hover { background: var(--bg-hover); color: var(--text-1); }
+
+  /* MOBILE FIXES */
+  @media (max-width: 768px) {
+    .input-area {
+      padding: 8px 10px 12px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+    .messages-container {
+      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    }
+    .pins-panel { width: 100%; right: -100%; }
+    .model-badge { display: none; }
+    .topbar-actions .icon-btn:not(#mem-badge-topbar) { display: none; }
+  }
+
   /* ===== CREATE CHAR MODAL ===== */
   .create-char-modal-overlay {
     display: none; position: fixed; inset: 0;
@@ -1721,6 +1935,10 @@
           <span id="model-badge-text">llama-3.3-70b-versatile</span>
         </div>
         <div class="topbar-actions">
+          <!-- Pins button (only visible in RP mode) -->
+          <div class="icon-btn" title="Mensajes marcados (Pins)" id="pins-btn" onclick="togglePinsPanel()" style="display:none;color:var(--warning);font-size:13px;">
+            📌 <span id="pins-count-badge" style="font-size:10px;font-family:var(--font-mono)">0</span>
+          </div>
           <div class="icon-btn" title="Memorias" style="font-size:11px;gap:4px;width:auto;padding:0 10px;" id="mem-badge-topbar">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg>
             <span id="memory-count-badge">—</span>
@@ -1728,6 +1946,8 @@
           <div class="icon-btn" title="Limpiar chat" onclick="clearChat()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
           </div>
+          <!-- Help button -->
+          <div class="help-btn" title="Ayuda" id="help-btn-topbar" onclick="openHelpModal()">?</div>
         </div>
       </div>
     </div>
@@ -1789,6 +2009,30 @@
       </div>
     </div>
   </main>
+</div>
+
+<!-- PINS PANEL -->
+<div class="pins-panel" id="pins-panel">
+  <div class="pins-panel-header">
+    <div class="pins-panel-title">
+      📌 Memoria Prioritaria
+      <span class="pins-panel-count" id="pins-panel-count">0/15</span>
+    </div>
+    <div class="pins-panel-close" onclick="togglePinsPanel()">✕</div>
+  </div>
+  <div class="pins-panel-body" id="pins-panel-body">
+    <div class="pins-empty">📌 No hay mensajes marcados.<br>Mantén presionado un mensaje en RP para marcarlo como importante.</div>
+  </div>
+</div>
+<div id="pins-overlay" style="display:none;position:fixed;inset:0;z-index:599;" onclick="togglePinsPanel()"></div>
+
+<!-- HELP MODAL -->
+<div class="help-modal-overlay" id="help-modal" onclick="handleHelpOverlayClick(event)">
+  <div class="help-modal" id="help-modal-content">
+    <h3 id="help-modal-title">❓ Cómo usar Shizuku</h3>
+    <div id="help-modal-body"></div>
+    <button class="help-close-btn" onclick="closeHelpModal()">Entendido</button>
+  </div>
 </div>
 
 <!-- Toast container -->
@@ -2012,6 +2256,8 @@ let activeChatId   = null;
 let appMode        = 'general'; // 'general' | 'rp'
 let activeChar     = null;      // character object for RP
 let pendingFile    = null;      // { name, text } for RAG upload
+let pinnedMessages = [];        // Array of { id, role, text } — max 15 per character
+let msgRegistry    = [];        // Ordered array of { id, role, text } for edit/rewind/delete
 
 // ============================================================
 //  UTILS
@@ -2023,13 +2269,18 @@ function getThreshold() { return parseFloat(document.getElementById('threshold')
 function getSystemPrompt() {
   const custom = (document.getElementById('system-prompt-input').value || '').trim();
   if (appMode === 'rp' && activeChar) {
+    let pinSection = '';
+    if (pinnedMessages.length > 0) {
+      pinSection = '\n\n## 📌 Hechos Importantes (Memoria Prioritaria — NUNCA olvides esto):\n' +
+        pinnedMessages.map((p, i) => `${i+1}. [${p.role === 'user' ? 'Usuario' : activeChar.name}]: "${p.text.slice(0,200)}"`).join('\n');
+    }
     const rp = `Eres ${activeChar.name}. NUNCA salgas del personaje.
 Descripción: ${activeChar.description}
 Personalidad: ${activeChar.personality}
 ${activeChar.example_dialogue ? 'Ejemplo de diálogo:\n' + activeChar.example_dialogue : ''}
 
 Las acciones narrativas van entre asteriscos: *se acerca lentamente*
-Responde siempre en el mismo idioma que el usuario.`;
+Responde siempre en el mismo idioma que el usuario.${pinSection}`;
     return custom ? custom + '\n\n' + rp : rp;
   }
   if (custom) return custom;
@@ -2175,6 +2426,7 @@ function onUserLoaded(user) {
     document.getElementById('chat-mode-label').textContent = 'Modo RP';
     document.getElementById('rp-bg').style.display = 'block';
     document.body.classList.add('rp-mode');
+    document.getElementById('pins-btn').style.display = 'flex';
     if (savedCharId) {
       supa.from('characters').select('*').eq('id', savedCharId).single().then(({ data }) => {
         if (data) {
@@ -2298,10 +2550,13 @@ function setMode(mode) {
   document.getElementById('chat-mode-label').textContent = mode === 'rp' ? 'Modo RP' : 'General';
   document.getElementById('rp-bg').style.display = mode === 'rp' ? 'block' : 'none';
   document.body.classList.toggle('rp-mode', mode === 'rp');
+  document.getElementById('pins-btn').style.display = mode === 'rp' ? 'flex' : 'none';
   const inp = document.getElementById('chat-input');
   if (inp) inp.placeholder = mode === 'rp'
     ? (activeChar ? `Habla con ${activeChar.name}...` : 'Selecciona un personaje primero...')
     : 'Escribe tu mensaje para Shizuku...';
+  // Reset pins when switching mode
+  if (mode === 'general') { pinnedMessages = []; msgRegistry = []; }
   clearChat(false);
 }
 
@@ -2398,9 +2653,13 @@ function selectCharacter(id) {
       document.getElementById('rp-bg').style.display = 'block';
       document.body.classList.add('rp-mode');
     }
-    // Start a fresh chat with this character
+    // Reset chat and pins for this character
     chatHistory = [];
     activeChatId = null;
+    msgRegistry = [];
+    pinnedMessages = [];
+    document.getElementById('pins-btn').style.display = 'flex';
+    updatePinsUI();
     const container = document.getElementById('messages');
     container.innerHTML = '';
     renderMessage('ai', `*${escapeHtml(data.name)} está aquí* — ¡Hola! ¿De qué quieres hablar?`);
@@ -2686,16 +2945,22 @@ async function loadChatById(id) {
     document.body.classList.toggle('rp-mode', appMode === 'rp');
   }
 
+  msgRegistry = [];
+  pinnedMessages = [];
   const { data: msgs } = await supa.from('messages')
-    .select('role,content,context_count')
+    .select('id,role,content,context_count,is_pinned')
     .eq('chat_id', id)
     .order('created_at', { ascending: true });
   if (!msgs || msgs.length === 0) { renderWelcomeScreen(); }
   else {
     msgs.forEach(m => {
-      renderMessage(m.role === 'assistant' ? 'ai' : 'user', m.content, m.context_count || 0);
+      if (m.is_pinned) {
+        pinnedMessages.push({ id: m.id, role: m.role === 'assistant' ? 'ai' : 'user', text: m.content });
+      }
+      renderMessage(m.role === 'assistant' ? 'ai' : 'user', m.content, m.context_count || 0, m.id);
       chatHistory.push({ role: m.role, content: m.content });
     });
+    updatePinsUI();
   }
   renderHistoryList();
   closeSidebar();
@@ -2832,6 +3097,34 @@ async function matchDocuments(embedding) {
 }
 
 // ============================================================
+//  SUPABASE — Match Documents con umbral bajo (Auto-RAG docs)
+//  Siempre busca fragmentos relevantes de documentos subidos,
+//  usando un umbral mucho más permisivo (0.25) para garantizar
+//  que el contenido subido SIEMPRE se inyecte si es relevante.
+// ============================================================
+async function matchDocumentsAuto(embedding) {
+  if (!currentUser) return [];
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_documents`, {
+      method: 'POST',
+      headers: {
+        'apikey':        SUPABASE_ANON,
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'Content-Type':  'application/json'
+      },
+      body: JSON.stringify({
+        query_embedding: embedding,
+        match_threshold: 0.25,   // Umbral permisivo para capturar docs subidos
+        match_count:     8,      // Más fragmentos para cubrir documentos largos
+        p_user_id:       currentUser.id
+      })
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch(e) { return []; }
+}
+
+// ============================================================
 //  SUPABASE — Insert document (user-scoped)
 // ============================================================
 async function insertDocument(content, embedding) {
@@ -2874,14 +3167,22 @@ async function chatCompletion(messages) {
 }
 
 // ============================================================
-//  RENDER MESSAGE
+//  RENDER MESSAGE  (with message registry + context menu support)
 // ============================================================
-function renderMessage(role, text, contextCount = 0) {
+function renderMessage(role, text, contextCount = 0, msgId = null) {
   const welcome = document.getElementById('welcome-screen');
   if (welcome) welcome.remove();
   const container = document.getElementById('messages');
   const row = document.createElement('div');
+  const id = msgId || ('msg_' + Date.now() + '_' + Math.random().toString(36).slice(2,7));
   row.className = `msg-row ${role}`;
+  row.dataset.msgId = id;
+  row.dataset.role = role;
+  row.dataset.text = text;
+
+  // Register message
+  msgRegistry.push({ id, role, text, el: row });
+
   const avatarContent = (role === 'ai' && appMode === 'rp' && activeChar && activeChar.avatar_url)
     ? `<img src="${escapeHtml(activeChar.avatar_url)}" style="width:32px;height:32px;border-radius:9px;object-fit:cover;">`
     : (role === 'ai' ? (appMode === 'rp' ? '🎭' : '🌸') : '👤');
@@ -2891,16 +3192,38 @@ function renderMessage(role, text, contextCount = 0) {
   const contextPill = (role === 'ai' && contextCount > 0)
     ? `<div class="msg-context-pill">⚡ ${contextCount} memoria${contextCount > 1 ? 's' : ''} usada${contextCount > 1 ? 's' : ''}</div>`
     : '';
+  const isPinned = pinnedMessages.some(p => p.id === id);
+  const pinBadge = isPinned ? `<div class="msg-pin-badge">📌 Marcado</div>` : '';
   const formatted = formatText(text);
   row.innerHTML = `
     ${avatar}
     <div class="msg-content">
       <div class="msg-sender">${escapeHtml(sender)}</div>
       ${contextPill}
+      ${pinBadge}
       <div class="msg-bubble">${formatted}</div>
       <div class="msg-time">${time}</div>
     </div>
   `;
+
+  // Context menu: long press (mobile) + right click (desktop)
+  if (appMode === 'rp') {
+    let pressTimer = null;
+    row.addEventListener('contextmenu', (e) => { e.preventDefault(); showMsgMenu(e, id, row); });
+    row.addEventListener('touchstart', (e) => { pressTimer = setTimeout(() => showMsgMenu(e.touches[0], id, row), 600); }, { passive: true });
+    row.addEventListener('touchend', () => clearTimeout(pressTimer));
+    row.addEventListener('touchmove', () => clearTimeout(pressTimer));
+  } else {
+    // General mode: only edit for user messages (long press)
+    if (role === 'user') {
+      let pressTimer = null;
+      row.addEventListener('contextmenu', (e) => { e.preventDefault(); showGeneralEditMenu(e, id, row); });
+      row.addEventListener('touchstart', (e) => { pressTimer = setTimeout(() => showGeneralEditMenu(e.touches[0], id, row), 600); }, { passive: true });
+      row.addEventListener('touchend', () => clearTimeout(pressTimer));
+      row.addEventListener('touchmove', () => clearTimeout(pressTimer));
+    }
+  }
+
   container.appendChild(row);
   scrollBottom();
   return row;
@@ -2993,11 +3316,25 @@ async function sendMessage() {
     setStatus('busy', 'Generando embedding...');
     const queryEmbedding = await getEmbedding(userMsg);
 
+    // --- BÚSQUEDA DUAL ---
+    // 1) Memorias con umbral normal (configurado por usuario)
     setStatus('busy', 'Consultando memoria RAG...');
-    const docs   = await matchDocuments(queryEmbedding);
-    contextCount = docs.length;
+    const docs = await matchDocuments(queryEmbedding);
+
+    // 2) Auto-RAG: busca fragmentos de documentos subidos con umbral permisivo
+    //    para garantizar que los talleres/docs subidos SIEMPRE se usen si son relevantes
+    setStatus('busy', 'Consultando documentos adjuntos...');
+    const autoDocs = await matchDocumentsAuto(queryEmbedding);
+
+    // Deduplicar: quitar de autoDocs los que ya están en docs (por contenido)
+    const docsContents = new Set(docs.map(d => d.content));
+    const extraDocs = autoDocs.filter(d => !docsContents.has(d.content));
+
+    let contextCount = docs.length + extraDocs.length;
 
     let systemPrompt = getSystemPrompt();
+
+    // Inyectar memorias normales
     if (docs.length > 0) {
       const contextText = docs.map((d, i) =>
         `[Memoria ${i + 1} | Similitud: ${(d.similarity * 100).toFixed(1)}%]\n${d.content}`
@@ -3005,10 +3342,20 @@ async function sendMessage() {
       systemPrompt += `\n\n## Contexto de Memoria Relevante:\n\n${contextText}`;
     }
 
+    // Inyectar documentos adjuntos (Auto-RAG) — siempre se incluyen si hay coincidencia
+    if (extraDocs.length > 0) {
+      const docText = extraDocs.map((d, i) =>
+        `[Fragmento ${i + 1} | Similitud: ${(d.similarity * 100).toFixed(1)}%]\n${d.content}`
+      ).join('\n\n---\n\n');
+      systemPrompt += `\n\n## [Contexto de Documentos Adjuntos] — Usa esta información para responder:\n\n${docText}`;
+    }
+
     setStatus('busy', 'Pensando...');
+    // General: last 20 turns; RP: full history (pins are in system prompt)
+    const histSlice = appMode === 'rp' ? chatHistory : chatHistory.slice(-20);
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...chatHistory.slice(-10),
+      ...histSlice,
       { role: 'user',   content: userMsg }
     ];
     const reply = await chatCompletion(messages);
@@ -3018,12 +3365,12 @@ async function sendMessage() {
 
     chatHistory.push({ role: 'user',      content: userMsg });
     chatHistory.push({ role: 'assistant', content: reply  });
-    if (chatHistory.length > 30) chatHistory = chatHistory.slice(-30);
+    if (chatHistory.length > 60) chatHistory = chatHistory.slice(-60);
 
     await autoSaveChat(userMsg, reply, contextCount);
 
     setStatus('ok', contextCount > 0
-      ? `Respondió con ${contextCount} memoria${contextCount > 1 ? 's' : ''}`
+      ? `Respondió con ${docs.length} memoria${docs.length !== 1 ? 's' : ''}${extraDocs.length > 0 ? ` + ${extraDocs.length} fragmento${extraDocs.length !== 1 ? 's' : ''} de docs` : ''}`
       : 'Sin contexto RAG — respuesta general');
 
   } catch (err) {
@@ -3090,9 +3437,412 @@ function chunkText(text, maxLen = 500) {
 // ============================================================
 function clearChat(resetId = true) {
   chatHistory = [];
+  msgRegistry = [];
   if (resetId) activeChatId = null;
   renderWelcomeScreen();
   setStatus('ok', 'Chat limpiado');
+}
+
+// ============================================================
+//  MESSAGE ACTION MENU
+// ============================================================
+let activeMenu = null;
+
+function closeActiveMenu() {
+  if (activeMenu) { activeMenu.remove(); activeMenu = null; }
+}
+
+document.addEventListener('click', (e) => {
+  if (activeMenu && !activeMenu.contains(e.target)) closeActiveMenu();
+});
+
+function showMsgMenu(e, msgId, row) {
+  closeActiveMenu();
+  const isPinned = pinnedMessages.some(p => p.id === msgId);
+  const menu = document.createElement('div');
+  menu.className = 'msg-action-menu';
+  menu.innerHTML = `
+    <button class="msg-action-btn" onclick="startEditMessage('${msgId}')">
+      ✏️ Editar
+    </button>
+    <button class="msg-action-btn" onclick="rewindToMessage('${msgId}')">
+      ⏪ Rebobinar desde aquí
+    </button>
+    <button class="msg-action-btn danger" onclick="deleteSingleMessage('${msgId}')">
+      🗑️ Eliminar
+    </button>
+    <button class="msg-action-btn ${isPinned ? 'pin-active' : ''}" onclick="togglePinMessage('${msgId}')">
+      📌 ${isPinned ? 'Desmarcar (Pin)' : 'Marcar (Pin)'}
+    </button>
+  `;
+  // Position near cursor/touch
+  const x = e.clientX || (e.pageX);
+  const y = e.clientY || (e.pageY);
+  menu.style.position = 'fixed';
+  menu.style.left = Math.min(x, window.innerWidth - 180) + 'px';
+  menu.style.top  = Math.min(y, window.innerHeight - 180) + 'px';
+  document.body.appendChild(menu);
+  activeMenu = menu;
+}
+
+function showGeneralEditMenu(e, msgId, row) {
+  closeActiveMenu();
+  const menu = document.createElement('div');
+  menu.className = 'msg-action-menu';
+  menu.innerHTML = `
+    <button class="msg-action-btn" onclick="startEditMessage('${msgId}')">
+      ✏️ Editar y regenerar
+    </button>
+  `;
+  const x = e.clientX || e.pageX;
+  const y = e.clientY || e.pageY;
+  menu.style.position = 'fixed';
+  menu.style.left = Math.min(x, window.innerWidth - 180) + 'px';
+  menu.style.top  = Math.min(y, window.innerHeight - 80) + 'px';
+  document.body.appendChild(menu);
+  activeMenu = menu;
+}
+
+// ============================================================
+//  EDIT MESSAGE
+// ============================================================
+function startEditMessage(msgId) {
+  closeActiveMenu();
+  const entry = msgRegistry.find(m => m.id === msgId);
+  if (!entry) return;
+  const row = entry.el;
+  const bubble = row.querySelector('.msg-bubble');
+  if (!bubble) return;
+
+  const originalText = entry.text;
+  const textarea = document.createElement('textarea');
+  textarea.className = 'msg-edit-area';
+  textarea.value = originalText;
+  autoResize(textarea);
+
+  const actionsDiv = document.createElement('div');
+  actionsDiv.className = 'msg-edit-actions';
+  actionsDiv.innerHTML = `
+    <button class="msg-edit-save" onclick="commitEdit('${msgId}')">Guardar</button>
+    <button class="msg-edit-cancel" onclick="cancelEdit('${msgId}', \`${escapeHtml(originalText).replace(/`/g, '\\`')}\`)">Cancelar</button>
+  `;
+
+  bubble.style.display = 'none';
+  row.querySelector('.msg-content').appendChild(textarea);
+  row.querySelector('.msg-content').appendChild(actionsDiv);
+  row._editTextarea = textarea;
+  row._editActions  = actionsDiv;
+  textarea.focus();
+}
+
+async function commitEdit(msgId) {
+  const entry = msgRegistry.find(m => m.id === msgId);
+  if (!entry) return;
+  const row = entry.el;
+  const textarea = row._editTextarea;
+  if (!textarea) return;
+  const newText = textarea.value.trim();
+  if (!newText) return;
+
+  // Update entry
+  entry.text = newText;
+  row.dataset.text = newText;
+
+  // Restore bubble
+  const bubble = row.querySelector('.msg-bubble');
+  bubble.innerHTML = formatText(newText);
+  bubble.style.display = '';
+  textarea.remove();
+  if (row._editActions) row._editActions.remove();
+
+  // Find index in msgRegistry
+  const idx = msgRegistry.findIndex(m => m.id === msgId);
+
+  if (entry.role === 'user') {
+    // Remove everything after this message
+    const toRemove = msgRegistry.slice(idx + 1);
+    toRemove.forEach(m => m.el.remove());
+    msgRegistry.splice(idx + 1);
+
+    // Rebuild chatHistory up to this point
+    chatHistory = msgRegistry.map(m => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.text
+    }));
+
+    // Update last user entry in history
+    chatHistory[chatHistory.length - 1].content = newText;
+
+    // If general mode: regenerate AI response
+    if (appMode === 'general' || appMode === 'rp') {
+      await regenerateFrom(newText);
+    }
+  } else {
+    // AI message edited: just update chatHistory
+    chatHistory = msgRegistry.map(m => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.text
+    }));
+    toast('✏️ Mensaje editado', 'success', 2000);
+  }
+}
+
+function cancelEdit(msgId, originalText) {
+  const entry = msgRegistry.find(m => m.id === msgId);
+  if (!entry) return;
+  const row = entry.el;
+  const bubble = row.querySelector('.msg-bubble');
+  bubble.style.display = '';
+  if (row._editTextarea) row._editTextarea.remove();
+  if (row._editActions)  row._editActions.remove();
+}
+
+async function regenerateFrom(userMsg) {
+  if (isProcessing) return;
+  isProcessing = true;
+  document.getElementById('send-btn').disabled = true;
+  showTyping();
+  setStatus('busy', 'Regenerando respuesta...');
+  const ragInd = document.getElementById('rag-indicator');
+  ragInd.classList.add('active');
+
+  try {
+    const queryEmbedding = await getEmbedding(userMsg);
+    const docs = await matchDocuments(queryEmbedding);
+    const autoDocs = await matchDocumentsAuto(queryEmbedding);
+    const docsContents = new Set(docs.map(d => d.content));
+    const extraDocs = autoDocs.filter(d => !docsContents.has(d.content));
+    const totalCount = docs.length + extraDocs.length;
+
+    let systemPrompt = getSystemPrompt();
+    if (docs.length > 0) {
+      const contextText = docs.map((d, i) =>
+        `[Memoria ${i + 1} | Similitud: ${(d.similarity * 100).toFixed(1)}%]\n${d.content}`
+      ).join('\n\n---\n\n');
+      systemPrompt += `\n\n## Contexto de Memoria Relevante:\n\n${contextText}`;
+    }
+    if (extraDocs.length > 0) {
+      const docText = extraDocs.map((d, i) =>
+        `[Fragmento ${i + 1} | Similitud: ${(d.similarity * 100).toFixed(1)}%]\n${d.content}`
+      ).join('\n\n---\n\n');
+      systemPrompt += `\n\n## [Contexto de Documentos Adjuntos] — Usa esta información para responder:\n\n${docText}`;
+    }
+    const histSlice = appMode === 'rp' ? chatHistory.slice(0, -1) : chatHistory.slice(-20, -1);
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...histSlice,
+      { role: 'user', content: userMsg }
+    ];
+    const reply = await chatCompletion(messages);
+    hideTyping();
+    renderMessage('ai', reply, totalCount);
+    chatHistory.push({ role: 'assistant', content: reply });
+    setStatus('ok', 'Respuesta regenerada');
+    await autoSaveChat(userMsg, reply, totalCount);
+  } catch(err) {
+    hideTyping();
+    renderMessage('ai', `❌ **Error:** ${err.message}`);
+    setStatus('err', 'Error al regenerar');
+  } finally {
+    isProcessing = false;
+    document.getElementById('send-btn').disabled = false;
+    ragInd.classList.remove('active');
+  }
+}
+
+// ============================================================
+//  REWIND TO MESSAGE
+// ============================================================
+function rewindToMessage(msgId) {
+  closeActiveMenu();
+  if (!confirm('¿Rebobinar hasta este punto? Se eliminarán todos los mensajes posteriores.')) return;
+  const idx = msgRegistry.findIndex(m => m.id === msgId);
+  if (idx < 0) return;
+
+  // Remove DOM elements after this index
+  const toRemove = msgRegistry.slice(idx + 1);
+  toRemove.forEach(m => m.el.remove());
+  msgRegistry.splice(idx + 1);
+
+  // Rebuild chatHistory
+  chatHistory = msgRegistry.map(m => ({
+    role: m.role === 'user' ? 'user' : 'assistant',
+    content: m.text
+  }));
+
+  // Clean pinned messages that were removed
+  const remainingIds = new Set(msgRegistry.map(m => m.id));
+  pinnedMessages = pinnedMessages.filter(p => remainingIds.has(p.id));
+  updatePinsUI();
+
+  toast('⏪ Rebobinado. Continúa la historia desde aquí.', 'info', 3000);
+}
+
+// ============================================================
+//  DELETE SINGLE MESSAGE
+// ============================================================
+function deleteSingleMessage(msgId) {
+  closeActiveMenu();
+  const idx = msgRegistry.findIndex(m => m.id === msgId);
+  if (idx < 0) return;
+
+  msgRegistry[idx].el.remove();
+  msgRegistry.splice(idx, 1);
+
+  // Rebuild chatHistory
+  chatHistory = msgRegistry.map(m => ({
+    role: m.role === 'user' ? 'user' : 'assistant',
+    content: m.text
+  }));
+
+  // Remove from pins if present
+  pinnedMessages = pinnedMessages.filter(p => p.id !== msgId);
+  updatePinsUI();
+
+  toast('🗑️ Mensaje eliminado', 'info', 2000);
+}
+
+// ============================================================
+//  PIN / UNPIN MESSAGE
+// ============================================================
+function togglePinMessage(msgId) {
+  closeActiveMenu();
+  const entry = msgRegistry.find(m => m.id === msgId);
+  if (!entry) return;
+
+  const pinIdx = pinnedMessages.findIndex(p => p.id === msgId);
+  if (pinIdx >= 0) {
+    // Unpin
+    pinnedMessages.splice(pinIdx, 1);
+    // Remove pin badge from DOM
+    const badge = entry.el.querySelector('.msg-pin-badge');
+    if (badge) badge.remove();
+    toast('📌 Mensaje desmarcado', 'info', 1800);
+  } else {
+    // Pin
+    if (pinnedMessages.length >= 15) {
+      toast('⚠️ Máximo 15 mensajes marcados. Desmarca uno primero.', 'warning', 3500);
+      return;
+    }
+    pinnedMessages.push({ id: msgId, role: entry.role, text: entry.text });
+    // Add pin badge to DOM
+    const content = entry.el.querySelector('.msg-content');
+    const sender  = content.querySelector('.msg-sender');
+    const badge   = document.createElement('div');
+    badge.className = 'msg-pin-badge';
+    badge.innerHTML = '📌 Marcado';
+    sender.insertAdjacentElement('afterend', badge);
+    toast('📌 Mensaje marcado como importante', 'success', 2000);
+  }
+  updatePinsUI();
+}
+
+function updatePinsUI() {
+  const count = pinnedMessages.length;
+  document.getElementById('pins-count-badge').textContent = count;
+  document.getElementById('pins-panel-count').textContent = `${count}/15`;
+  const body = document.getElementById('pins-panel-body');
+  if (count === 0) {
+    body.innerHTML = '<div class="pins-empty">📌 No hay mensajes marcados.<br>Mantén presionado un mensaje en RP para marcarlo como importante.</div>';
+    return;
+  }
+  body.innerHTML = pinnedMessages.map(p => `
+    <div class="pin-item">
+      <div class="pin-item-role">${p.role === 'user' ? '👤 Tú' : '🎭 ' + (activeChar ? activeChar.name : 'IA')}</div>
+      <div class="pin-item-text">${escapeHtml(p.text)}</div>
+      <button class="pin-item-del" onclick="togglePinMessage('${p.id}')" title="Desmarcar">✕</button>
+    </div>
+  `).join('');
+}
+
+function togglePinsPanel() {
+  const panel   = document.getElementById('pins-panel');
+  const overlay = document.getElementById('pins-overlay');
+  const isOpen  = panel.classList.contains('open');
+  panel.classList.toggle('open', !isOpen);
+  overlay.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) updatePinsUI();
+}
+
+// ============================================================
+//  HELP MODAL
+// ============================================================
+const HELP_CONTENT = {
+  general: {
+    title: '❓ Cómo usar el Modo General',
+    sections: [
+      {
+        title: 'Conversación con memoria',
+        items: [
+          { icon: '🧠', text: '<strong>Memoria RAG:</strong> Shizuku recuerda todo lo que subas en Ajustes > Agregar Memoria. Usa esa información en sus respuestas.' },
+          { icon: '📜', text: '<strong>Historial completo:</strong> Toda la conversación activa se envía como contexto. No hay "memoria de pez".' },
+          { icon: '✏️', text: '<strong>Editar mensaje:</strong> Clic derecho (o mantén presionado en móvil) en cualquiera de <em>tus</em> mensajes para editarlo. La IA regenerará la respuesta automáticamente.' },
+        ]
+      },
+      {
+        title: 'Memoria y configuración',
+        items: [
+          { icon: '⚙️', text: '<strong>Ajustes:</strong> Configura tu Groq API Key, modelo y personalidad de Shizuku en el botón ⚙️ de abajo a la izquierda.' },
+          { icon: '📄', text: '<strong>Archivos:</strong> Adjunta PDFs o TXTs con el clip 📎 para subirlos a la memoria RAG.' },
+          { icon: '⚡', text: '<strong>Indicador RAG:</strong> La píldora "⚡ N memorias usadas" indica cuántos fragmentos de memoria se usaron en esa respuesta.' },
+        ]
+      }
+    ]
+  },
+  rp: {
+    title: '❓ Cómo usar el Modo RP (ShizuRP)',
+    sections: [
+      {
+        title: 'Menú de acciones (clic derecho / mantener)',
+        items: [
+          { icon: '✏️', text: '<strong>Editar:</strong> Modifica cualquier mensaje (tuyo o del bot). Al editar el tuyo, la IA regenera la respuesta.' },
+          { icon: '⏪', text: '<strong>Rebobinar:</strong> Elimina todos los mensajes posteriores a ese punto. La IA no recordará lo eliminado.' },
+          { icon: '🗑️', text: '<strong>Eliminar:</strong> Borra ese mensaje individual de la historia y de la memoria.' },
+          { icon: '📌', text: '<strong>Marcar (Pin):</strong> Agrega el mensaje a la Memoria Prioritaria. Máximo 15 mensajes marcados por sesión.' },
+        ]
+      },
+      {
+        title: 'Memoria Prioritaria (Pins)',
+        items: [
+          { icon: '📌', text: 'Los mensajes marcados se envían <strong>siempre</strong> en el System Prompt como "Hechos Importantes". El personaje nunca los olvida.' },
+          { icon: '🔢', text: 'Puedes marcar hasta <strong>15 mensajes</strong>. Ve el botón 📌 en la barra superior para ver y gestionar tus pins.' },
+        ]
+      },
+      {
+        title: 'Personajes y narrativa',
+        items: [
+          { icon: '🎭', text: 'Selecciona o crea personajes en la pantalla de inicio del Modo RP o en Ajustes > Personajes RP.' },
+          { icon: '✨', text: 'Las acciones narrativas van entre asteriscos: <em>*se acerca lentamente*</em>' },
+        ]
+      }
+    ]
+  }
+};
+
+function openHelpModal(mode) {
+  const m = mode || appMode;
+  const content = HELP_CONTENT[m] || HELP_CONTENT.general;
+  document.getElementById('help-modal-title').textContent = content.title;
+  document.getElementById('help-modal-body').innerHTML = content.sections.map(s => `
+    <div class="help-section">
+      <h4>${s.title}</h4>
+      ${s.items.map(it => `
+        <div class="help-item">
+          <span class="help-item-icon">${it.icon}</span>
+          <span class="help-item-text">${it.text}</span>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+  document.getElementById('help-modal').classList.add('open');
+}
+
+function closeHelpModal() {
+  document.getElementById('help-modal').classList.remove('open');
+}
+
+function handleHelpOverlayClick(e) {
+  if (e.target === document.getElementById('help-modal')) closeHelpModal();
 }
 
 // ============================================================
